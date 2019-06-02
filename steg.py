@@ -73,8 +73,12 @@ class LSB_steg():
     # decode text
     def decode_text(self):
         text_size = ""
+
+        # check order of bits
+
         for i in range(16):
             text_size += self.decode_bit()
+        #print (int(text_size, 2))
         res = ""
         for i in range(int(text_size, 2)):
             temp = ""

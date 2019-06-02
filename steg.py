@@ -87,6 +87,35 @@ class LSB_steg():
             res += chr(int(temp, 2))
         return res
 
+    # encode binary file
+    def encode_binary(self, data):
+        if self.size*self.nbchannels < len(data)+64:
+            print ("Our carrier image is not big enough to encrypt this file!")
+            exit(1)
+        length_bin_val = self.binary_value(len(data), 64)
+        # encode the length of the file
+        self.put_bin_val(length_bin_val)
+        # encode the actual data of the file
+        for b in data:
+            if not isinstance(b, int):
+                b = ord(b)
+            byte_val = self.binary_value(b, 8)
+            self.put_bin_val(byte_val)
+        return self.image
+
+    # decode binary file
+    def decode_binary(self):
+        length_file = ""
+        for i in range(64):
+            length_file += self.decode_bit()
+        res = b""
+        for i in range(int(length_file, 2)):
+            tmp = ""
+            for i in range(8):
+                tmp += self.decode_bit()
+            res += chr(int(tmp, 2)).encode("utf-8")
+        return res
+
 
 
 """

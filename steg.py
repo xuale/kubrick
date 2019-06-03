@@ -3,12 +3,16 @@
 
 import numpy as np
 
+def print_error(msg):
+    print(msg)
+    exit(1)
+
 class LSB_steg():
 
-    def __init__(self, in_img):
+    def __init__(self, in_img, bit_size):
         self.image = in_img
+        self.encode_bit_size = bit_size
         self.height, self.width, self.nbchannels = in_img.shape
-        self.size = self.width * self.height
         self.cur_width = 0
         self.cur_height = 0
         self.cur_channel = 0
@@ -40,8 +44,7 @@ class LSB_steg():
                 else:
                     self.cur_height = 0
                     if self.mask_one == 128:
-                        print("Image is completely filled. No spots remaining.")
-                        exit(1)
+                        print_error("Image is completely filled. No spots remaining.")
                     else:
                         self.mask_one = self.mask_one_vals.pop()
                         self.mask_zero = self.mask_zero_vals.pop()
@@ -63,7 +66,7 @@ class LSB_steg():
     # encode text
     def encode_text(self, text):
         # encode the length of text (so we can know how much to retrieve when we decode later)
-        bin_length = self.binary_value(len(text), 16)
+        bin_length = self.binary_value(len(text), self.encode_bit_size)
         self.put_bin_val(bin_length)
         # encode the actual text
         for c in text:
@@ -73,12 +76,9 @@ class LSB_steg():
     # decode text
     def decode_text(self):
         text_size = ""
-
         # check order of bits
-
-        for i in range(16):
+        for i in range(self.encode_bit_size):
             text_size += self.decode_bit()
-        #print (int(text_size, 2))
         res = ""
         for i in range(int(text_size, 2)):
             temp = ""
@@ -89,9 +89,9 @@ class LSB_steg():
 
     # encode binary file
     def encode_binary(self, data):
-        if self.size*self.nbchannels < len(data)+64:
-            print ("Our carrier image is not big enough to encrypt this file!")
-            exit(1)
+        carrier_img_size = self.width * self.height * self.nbchannels
+        if carrier_img_size < len(data)+64:
+            print_error("Our carrier image is not big enough to encrypt this file!")
         length_bin_val = self.binary_value(len(data), 64)
         # encode the length of the file
         self.put_bin_val(length_bin_val)
@@ -118,11 +118,11 @@ class LSB_steg():
 
     # encode image
     def encode_image(self, in_img):
-        if self.size*self.nbchannels < (in_img.shape[1]*in_img.shape[0]*in_img.shape[2]):
-            print ("Our carrier image is not big enough to encrypt this file!")
-            exit(1)
-        binary_width = self.binary_value(in_img.shape[1], 16)
-        binary_height = self.binary_value(in_img.shape[0], 16)
+        carrier_img_size = self.width * self.height * self.nbchannels
+        if carrier_img_size < (in_img.shape[1]*in_img.shape[0]*in_img.shape[2]):
+            print_error("Our carrier image is not big enough to encrypt this file!")
+        binary_width = self.binary_value(in_img.shape[1], self.encode_bit_size)
+        binary_height = self.binary_value(in_img.shape[0], self.encode_bit_size)
         # put sizes into image
         self.put_bin_val(binary_width)
         self.put_bin_val(binary_height)
@@ -137,11 +137,11 @@ class LSB_steg():
     # decode image
     def decode_image(self):
         binary_width = ""
-        for i in range(16):
+        for i in range(self.encode_bit_size):
             binary_width += self.decode_bit()
         width = int(binary_width, 2)
         binary_height = ""
-        for i in range(16):
+        for i in range(self.encode_bit_size):
             binary_height += self.decode_bit()
         height = int(binary_height, 2)
         new_img = np.zeros((width, height, 3), np.uint8)

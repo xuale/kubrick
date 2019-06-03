@@ -7,7 +7,7 @@ def print_error(msg):
     print(msg)
     exit(1)
 
-class LSB_steg():
+class lsbrick():
 
     def __init__(self, in_img, bit_size):
         self.image = in_img

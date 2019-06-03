@@ -1,7 +1,7 @@
 # kubrick
 
-a framework for medical stenography.
-supports least bit stenography.
+a framework for medical steganography.
+supports least bit steganography.
 supports text, image, and binary file encoding/decoding.
 
 # installation

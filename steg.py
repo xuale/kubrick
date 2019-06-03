@@ -116,42 +116,44 @@ class LSB_steg():
             res += chr(int(tmp, 2)).encode("utf-8")
         return res
 
+    # encode image
+    def encode_image(self, in_img):
+        if self.size*self.nbchannels < (in_img.shape[1]*in_img.shape[0]*in_img.shape[2]):
+            print ("Our carrier image is not big enough to encrypt this file!")
+            exit(1)
+        binary_width = self.binary_value(in_img.shape[1], 16)
+        binary_height = self.binary_value(in_img.shape[0], 16)
+        # put sizes into image
+        self.put_bin_val(binary_width)
+        self.put_bin_val(binary_height)
+        # put actual data into image
+        for h in range(in_img.shape[0]):
+            for w in range(in_img.shape[1]):
+                for c in range(in_img.shape[2]):
+                    bin_val = self.binary_value(int(in_img[h,w][c]), 8)
+                    self.put_bin_val(bin_val)
+        return self.image
 
-
-"""
-def LSB_steg(in_img, option):
-    # create steg object
-    steg_obj = LSB_steg(in_img)
-
-    # encode
-    if option == '-e':
-        data = open(sys.argv[4], "rb").read()
-        res = steg_obj.encode_binary(data)
-        cv2.imwrite(sys.argv[3], res)
-    # decode
-    else:
-        raw = steg_obj.decode_binary()
-        with open(sys.argv[3], "wb") as f:
-            f.write(raw)
-
-def example_usage():
-    print('Usage: python steg.py -e/-d [input] [output] [file]')
-
-def main():
-    # check for valid arguments:
-    # -check length
-    # -check options
-    if len(sys.argv) != 5 or (not sys.argv[1] in ['-e', '-d']):
-        print('Invalid arguments!\n')
-        example_usage()
-        exit(1)
-
-    # read in the input image
-    input_img = cv2.imread(sys.argv[2])
-
-    # call main steg function
-    steg = LSB_steg(input_img, sys.argv[1])
-
-if __name__=='__main__':
-    main()
-"""
+    # decode image
+    def decode_image(self):
+        binary_width = ""
+        for i in range(16):
+            binary_width += self.decode_bit()
+        width = int(binary_width, 2)
+        binary_height = ""
+        for i in range(16):
+            binary_height += self.decode_bit()
+        height = int(binary_height, 2)
+        new_img = np.zeros((width, height, 3), np.uint8)
+        for h in range(height):
+            for w in range(width):
+                for c in range(new_img.shape[2]):
+                    temp = ""
+                    for i in range(8):
+                        temp += self.decode_bit()
+                    new_val = int(temp, 2)
+                    list_cur_vals = list(new_img[w, h])
+                    list_cur_vals[c] = new_val
+                    new_img[w, h] = tuple(list_cur_vals)
+        new_img = np.fliplr(new_img)
+        return new_img

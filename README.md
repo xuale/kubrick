@@ -70,11 +70,22 @@ cv2.imwrite("recovered.png", orig_im)
 
 # to test
 
-write some test shit (see "how to use" and "example usage" section) in `test.py`
+write some tests (see "how to use" and "example usage" section) in `test.py`
 and run:
 
 `python test.py`
 
 # notes
 
-- only works with PNG files rn bc JPEG/JPG files fuck with compression of bits
+- only works with PNG files right now because JPEG/JPG files affect compression of bits
+
+# server
+
+Run `pip install -r requirements.txt`
+Run `python server.py`
+
+Create a folder called `/uploads` in the base directory, and include a default carrier image and name it `carrier.png`
+
+The server runs on port 5000, and includes four endpoints (decoding and encoding for both image and text).
+
+It expects image data packaged using the FormData API.

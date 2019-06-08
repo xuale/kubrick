@@ -61,11 +61,48 @@ def decode():
             raise ValueError('Failed to decode image. Please try again')
         dir_path = os.path.dirname(os.path.realpath(__file__))
         return send_file(filename_or_fp=dir_path + "/original.png", mimetype="image/gif", as_attachment=True)
-    except:
+    except ValueError as e:
         response = {'err': str(e)}
         response_pickled = jsonify(response)
         return Response(json.dumps(response), mimetype=u'application/json') 
 
+@app.route('/api/text_encode', methods=['POST'])
+def t_encode():
+    carrier_img = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], "bryan_michael.png"))  
+    steg = lsbrick(carrier_img, 16)
+    try:
+        body = request.json
+        print(body['text'])
+        res = steg.encode_text(body['text'])
+        res_file = cv2.imwrite("result.png", res)
+        if(res_file == False):
+            raise ValueError('Failed to convert text. Please try again')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        app.logger.info(res)
+        return send_file(filename_or_fp=dir_path + "/result.png", mimetype="image/gif", as_attachment=True)
+    except ValueError as e:
+        response = {'err': str(e)}
+        response_pickled = jsonify(response)
+        return Response(json.dumps(response), mimetype=u'application/json') 
+
+@app.route('/api/text_decode', methods=['POST'])
+def t_decode():
+    # if receive a carrier, it's been encoded already
+    carrier_img = to_img(request, 'encoded_img')
+    steg = lsbrick(carrier_img, 16)
+    try:
+        orig_text = steg.decode_text()
+        print(orig_text)
+        res_file = open('decoded_text.txt', "w+")
+        res_file.write(orig_text)
+        if(not res_file):
+            raise ValueError('Failed to decode image. Please try again')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        return send_file(filename_or_fp=dir_path + "/decoded_text.txt", mimetype="text/*", as_attachment=True)
+    except ValueError as e:
+        response = {'err': str(e)}
+        response_pickled = jsonify(response)
+        return Response(json.dumps(response), mimetype=u'application/json') 
 
 # start flask app
 app.debug = True

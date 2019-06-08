@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify, json, send_file
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import jsonpickle
@@ -33,31 +33,38 @@ def store_carrier(request):
 # route http posts to this method
 @app.route('/api/image_encode', methods=['POST'])
 def encode():
-    pic = to_img(request, 'pic')
-    steg = store_carrier(request)
-    new_img = steg.encode_image(pic)
-    app.logger.info(new_img)
-
-    # build a response dict to send back to client
-    response = {'message': 'image received. size={}x{}'.format(1,1)
-                }
-    # encode response using jsonpickle
-    response_pickled = jsonpickle.encode(response)
-
-    return Response(response=response_pickled, status=200, mimetype="application/json")
+    pic = to_img(request, 'picture')
+    carrier_img = cv2.imread(os.path.join(app.config['UPLOAD_FOLDER'], "carrier.png"))  
+    steg = lsbrick(carrier_img, 16)
+    try:
+        res = steg.encode_image(pic)
+        res_file = cv2.imwrite("result.png", res)
+        if(res_file == False):
+            raise ValueError('Failed to convert image. Please try again')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        app.logger.info(res)
+        return send_file(filename_or_fp=dir_path + "/result.png", mimetype="image/gif", as_attachment=True)
+    except ValueError as e:
+        response = {'err': str(e)}
+        response_pickled = jsonify(response)
+        return Response(json.dumps(response), mimetype=u'application/json') 
 
 @app.route('/api/image_decode', methods=['POST'])
 def decode():
-    steg = store_carrier(request)
-    orig_im = steg.decode_image()
-
-    # build a response dict to send back to client
-    response = {'message': 'image received. size={}x{}'.format(img.shape[1], img.shape[0])
-                }
-    # encode response using jsonpickle
-    response_pickled = jsonpickle.encode(response)
-
-    return Response(response=response_pickled, status=200, mimetype="application/json")
+    # if receive a carrier, it's been encoded already
+    carrier_img = to_img(request, 'encoded_img')
+    steg = lsbrick(carrier_img, 16)
+    try:
+        orig_img = steg.decode_image()
+        res_file = cv2.imwrite("original.png", orig_img)
+        if(res_file == False):
+            raise ValueError('Failed to decode image. Please try again')
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        return send_file(filename_or_fp=dir_path + "/original.png", mimetype="image/gif", as_attachment=True)
+    except:
+        response = {'err': str(e)}
+        response_pickled = jsonify(response)
+        return Response(json.dumps(response), mimetype=u'application/json') 
 
 
 # start flask app

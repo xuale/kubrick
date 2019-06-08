@@ -4,7 +4,8 @@
 import numpy as np
 
 def print_error(msg):
-    print(msg)
+    # print(msg)
+    raise ValueError(msg)
     exit(1)
 
 class lsbrick():
